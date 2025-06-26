@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+/**
+ * @title DeMaskedCore
+ * @dev The core contract for the DeMasked DApp, handling user management,
+ * friend system, posting, and token-based fees. Messaging is handled off-chain.
+ */
+
+contract DeMaskedCore is Ownable {
+    using Strings for uint256;
+
+// --- State Variables ---
+
+    IERC20 public immutable deMaskedToken;
+    address public deMaskedTokenAddress;
+
+
+    uint256 public registrationFee;
+    uint256 public addFriendFee;
+    uint256 public postTextFee;
+    uint256 public postImageFee;
+    uint256 public freeRegistrationTokens;
+
+    // User management: wallet address -> username
+    mapping(address => string) public userNames;
+    // User management: username -> wallet address (for uniqueness check)
+    mapping(string => address) public userNameToAddress;
+    // User registration status
+    mapping(address => bool) public isRegistered;
+    // Friend system: user address -> friend address -> is friend
+    mapping(address =>mapping(address => bool)) public friends;
+    // Mapping to track pending friend requests: sender -> receiver -> true
+    mapping(address => mapping(address => bool)) public pendingFriendRequests;
+
+    // Store lists of friends for easier retrieval in Solidity (though iterating mappings is hard)
+    mapping(address => address[]) public userFriendLists;
+    mapping(address => address[]) public userSentRequests;
+    mapping(address => address[]) public userReceivedRequests;
+
+   // Post structure
+    struct Post {
+        address author;
+        string userName;
+        string content;
+        string imageUrl;
+        uint256 timestamp;
+        uint256 postId;
+    }
+
+    Post[] public posts;
+    uint256 private nextPostId;
+
+   // --- Events ---
+    event UserRegistered(address indexed user, string userName, uint256 receivedTokens);
+    event FriendRequestSent(address indexed sender, address indexed receiver);
+    event FriendRequestAccepted(address indexed accepter, address indexed requester);
+    event FriendRequestDeclined(address indexed decliner, address indexed requester);
+    event FriendRemoved(address indexed user1, address indexed user2);
+    event PostCreated(address indexed author, string userName, uint256 postId, string content, string imageUrl, uint256 timestamp);
+
+
+        // --- Constructor ---
+    /**
+     * @dev Constructor that initializes the contract with the DeMaskedToken address
+     * and sets initial fees.
+     * `Ownable(msg.sender)` is explicitly called for broader compiler compatibility.
+     * @param _deMaskedTokenAddress The address of the deployed DeMaskedToken contract.
+     */
+    constructor(address _deMaskedTokenAddress) Ownable(msg.sender) {
+        require(_deMaskedTokenAddressv != address(0), "Invalid DMT token Address");
+        deMaskedTokenAddress = _deMaskedTokenAddress;
+        deMaskedToken = IERC20(_deMaskedTokenAddress);
+
+        // initial fees
+        registrationFee = 0;
+        sendFriendRequestFee = 30 * 10**18;
+        postTextFee = 20 * 10**18;
+        postImageFee = 50 * 10**18;
+        freeRegistrationTokens = 500 *10**18;
+        nextPostId = 0;
+    }
+
+    
+    // --- Owner Functions (Fee Management) ---
+    // All functions with `onlyOwner` modifier are inherited from Ownable and are callable by the owner.
+
+    /**
+     * @dev Sets the registration fee.
+     * Can only be called by the contract owner.
+     * @param _fee The new fee in DMT tokens.
+     */
+
+    function setRegistrationFee(uint256 _fee) public onlyOwner {
+        registrationFee = _fee;
+    }
+
+     /**
+     * @dev Sets the amount of free tokens a new user receives on registration.
+     * Can only be called by the contract owner.
+     * @param _amount The new amount of free tokens in DMT.
+     */
+    function setFreeRegistrationTokens(uint256 _amount) public onlyOwner {
+        freeRegistrationTokens = _amount;
+    }
+
+    /**
+     * @dev Sets the sendfriend request fee.
+     * Can only be called by the contract owner.
+     * @param _fee The new fee in DMT tokens.
+     */
+    function setSendFriendRequestFee(uint256 _fee) public onlyOwner {
+        addFriendFee = _fee;
+    }
+
+     /**
+     * @dev Sets the text post fee.
+     * Can only be called by the contract owner.
+     * @param _fee The new fee in DMT tokens.
+     */
+    function setPostTextFee(uint256 _fee) public onlyOwner {
+        postTextFee = _fee
+    }
+
+    /**
+     * @dev Sets the image post fee.
+     * Can only be called by the contract owner.
+     * @param _fee The new fee in DMT tokens.
+    */
+    function setPostImageFee(uint256 _fee) public onlyOwner {
+        postImageFee = _fee;
+    }
+
+
+
+     // --- User Management ---
+    /**
+     * @dev Registers a new user with a unique username and provides free tokens.
+     * No registration fee is required.
+     * @param _userName The desired unique username.
+     */
+
+     function register(string calldata _userName) public {
+        require(!isRegistered[msg.sender], "User already registered");
+        require(bytes(_userName).length > 5, "Username should be 5 character long");
+        require(userNameToAddress[_userName] == address(0), "Username already exists");
+
+        userNames[msg.sender] = _userName;
+        userNameToAddress[_userName] = msg.sender;
+        isRegistered[msg.sender] = true;
+
+        // Transfer freee 500 tokens
+        require(deMaskedToken.transfer(msg.sender, freeRegistrationTokens), "Failed to transfer free tokens after registration");
+
+        emit UserRegistered(msg.sender, _userName, freeRegistrationTokens);
+     }
+
+     /**
+     * @dev Retrieves the username for a given address.
+     * @param _user The address to query.
+     * @return The username associated with the address, or an empty string if not registered.
+     */
+    function getUserName(address _user) public view returns (string memory) {
+        return userNames[_user];
+    }
+
+    // --- Friend System ---
+    /**
+     * @dev Adds another user as a friend.
+     * Requires payment of addFriendFee in DMT tokens.
+     * Both users must be registered.
+     * @param _friendAddress The address of the user to add as a friend.
+     */
+    function sendFriendRequest(address _receiver) public {
+        
+    }
+}
