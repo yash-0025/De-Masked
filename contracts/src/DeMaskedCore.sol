@@ -176,6 +176,19 @@ contract DeMaskedCore is Ownable {
      * @param _friendAddress The address of the user to add as a friend.
      */
     function sendFriendRequest(address _receiver) public {
-        
+        require(msg.sender != _receiver, "You cannot send request to yourself");
+        require(isRegistered[msg.sender], "Sender not Registered");
+        require(isRegistered[_receiver], "Receiver is not registered");
+        require(!friends[msg.sender][_receiver], "Already Friends");
+        require(!pendingFriendRequests[msg.sender][_receiver], "Request already exists!");
+        require(!pendingFriendRequests[_receiver][msg.sender], "Your friend has already sent you friend request please check and accept");
+
+        require(deMaskedToken.transfer(msg.sender, address(this), sendFriendRequestFee), "Failed to transfer the friendRequest fee");
+    
+        pendingFriendRequests[msg.sender][_receiver] = true;
+        userSentRequests[msg.sender].push(_receiver);
+        userReceivedRequests[_receiver].push(msg.sender);
+
+        emit FriendRequestSent(msg.sender,_receiver);
     }
 }
