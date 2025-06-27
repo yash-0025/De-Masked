@@ -21,9 +21,10 @@ contract DeMaskedCore is Ownable {
 
 
     uint256 public registrationFee;
-    uint256 public addFriendFee;
+    uint256 public sendFriendRequestFee;
     uint256 public postTextFee;
     uint256 public postImageFee;
+
     uint256 public freeRegistrationTokens;
 
     // User management: wallet address -> username
@@ -72,7 +73,7 @@ contract DeMaskedCore is Ownable {
      * @param _deMaskedTokenAddress The address of the deployed DeMaskedToken contract.
      */
     constructor(address _deMaskedTokenAddress) Ownable(msg.sender) {
-        require(_deMaskedTokenAddressv != address(0), "Invalid DMT token Address");
+        require(_deMaskedTokenAddress != address(0), "Invalid DMT token Address");
         deMaskedTokenAddress = _deMaskedTokenAddress;
         deMaskedToken = IERC20(_deMaskedTokenAddress);
 
@@ -114,7 +115,7 @@ contract DeMaskedCore is Ownable {
      * @param _fee The new fee in DMT tokens.
      */
     function setSendFriendRequestFee(uint256 _fee) public onlyOwner {
-        addFriendFee = _fee;
+        sendFriendRequestFee = _fee;
     }
 
      /**
@@ -123,7 +124,7 @@ contract DeMaskedCore is Ownable {
      * @param _fee The new fee in DMT tokens.
      */
     function setPostTextFee(uint256 _fee) public onlyOwner {
-        postTextFee = _fee
+        postTextFee = _fee;
     }
 
     /**
@@ -169,12 +170,7 @@ contract DeMaskedCore is Ownable {
     }
 
     // --- Friend System ---
-    /**
-     * @dev Adds another user as a friend.
-     * Requires payment of addFriendFee in DMT tokens.
-     * Both users must be registered.
-     * @param _friendAddress The address of the user to add as a friend.
-     */
+    
     function sendFriendRequest(address _receiver) public {
         require(msg.sender != _receiver, "You cannot send request to yourself");
         require(isRegistered[msg.sender], "Sender not Registered");
@@ -183,7 +179,7 @@ contract DeMaskedCore is Ownable {
         require(!pendingFriendRequests[msg.sender][_receiver], "Request already exists!");
         require(!pendingFriendRequests[_receiver][msg.sender], "Your friend has already sent you friend request please check and accept");
 
-        require(deMaskedToken.transfer(msg.sender, address(this), sendFriendRequestFee), "Failed to transfer the friendRequest fee");
+        require(deMaskedToken.transferFrom(msg.sender, address(this), sendFriendRequestFee), "Failed to transfer the friendRequest fee");
     
         pendingFriendRequests[msg.sender][_receiver] = true;
         userSentRequests[msg.sender].push(_receiver);
@@ -207,10 +203,10 @@ contract DeMaskedCore is Ownable {
         require(!friends[msg.sender][_requester], "You are already friends");
 
         friends[msg.sender][_requester] = true;
-        friends[_requester][_requester] = true;
+        friends[_requester][msg.sender] = true;
 
-        userFriendLists[msg.sender][_requester] = true;
-        userFriendLists[_requester][msg.sender] = true
+        userFriendLists[msg.sender].push(_requester);
+        userFriendLists[_requester].push(msg.sender);
 
         pendingFriendRequests[_requester][msg.sender] = false;
         _removeAddressFromArray(userSentRequests[_requester], msg.sender);
@@ -220,7 +216,7 @@ contract DeMaskedCore is Ownable {
     }
 
     function declineFriendRequest(address _requester) public {
-        require(msg.sender != requester, "Cannot decline request from yourself");
+        require(msg.sender != _requester, "Cannot decline request from yourself");
         require(isRegistered[msg.sender], "User not registered");
         require(isRegistered[_requester], "Friend is not registered");
         require(pendingFriendRequests[_requester][msg.sender], "No pending request to decline from this user");
@@ -265,7 +261,7 @@ contract DeMaskedCore is Ownable {
     function _removeAddressFromArray(address[] storage arr, address element) internal {
         for(uint i = 0; i <arr.length; i++) {
             if(arr[i] == element) {
-                arr[i] = arr[arr.length - 1]
+                arr[i] = arr[arr.length - 1];
                 arr.pop();
                 return;
             }
@@ -336,7 +332,8 @@ contract DeMaskedCore is Ownable {
         posts.push(Post({
             author: msg.sender,
             userName: userNames[msg.sender],
-            content: _imageUrl,
+            content: _content,
+            imageUrl: _imageUrl,
             timestamp: block.timestamp,
             postId: nextPostId
         }));
@@ -372,5 +369,5 @@ contract DeMaskedCore is Ownable {
         require(deMaskedToken.transfer(owner(), balance), "DMT withdrawal failed");
     }
 
-    
-}
+
+}  
