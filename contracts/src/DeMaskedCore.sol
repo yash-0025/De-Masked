@@ -219,6 +219,22 @@ contract DeMaskedCore is Ownable {
         emit FriendRequestAccepted(msg.sender, _requester);
     }
 
+    function declinFriendRequest(address _requester) public {
+        require(msg.sender != requester, "Cannot decline request from yourself");
+        require(isRegistered[msg.sender], "User not registered");
+        require(isRegistered[_requester], "Friend is not registered");
+        require(pendingFriendRequests[_requester][msg.sender], "No pending request to decline from this user");
+        require(!friends[msg.sender][_requester], "Already friends you cannot decline if you are already friends");
+
+        pendingFriendRequests[_requester][msg.sender] = false;
+        _removeAddressFromArray(userSentRequests[_requester],msg.sender);
+        _removeAddressFromArray(userReceivedRequests[msg.sender], _requester);
+
+        emit FriendRequestDeclined(msg.sender, _requester);
+    }
+
+    
+
 
 
     /**
