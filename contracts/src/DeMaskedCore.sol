@@ -311,5 +311,36 @@ contract DeMaskedCore is Ownable {
 
 
     // ------------------------- POSTS ----------
-    
+        /**
+     * @dev Creates a new post (text or image).
+     * Requires payment of postTextFee or postImageFee in DMT tokens.
+     * User must be registered.
+     * @param _content The text content of the post.
+     * @param _imageUrl The URL of the image, empty string if no image.
+     */
+    function createPost(string calldata _content, string calldata _imageUrl) public {
+        require(isRegistered[msg.sender], "User is not registered");
+        require(bytes(_content).length > 0 || bytes(_imageUrl).length > 0, "Post cannot be empty");
+
+        uint256 fee;
+        if(bytes(_content).length > 0 && bytes(_imageUrl).length > 0) {
+            fee = postImageFee + postTextFee;
+        } else if (bytes(_imageUrl).length > 0 ) {
+            fee = postImageFee;
+        } else {
+            fee = postTextFee;
+        }
+
+        require(deMaskedToken.transferFrom(msg.sender, address(this), fee), "DMT token transfer failed");
+
+        posts.push(Post({
+            author: msg.sender,
+            userName: userNames[msg.sender],
+            content: _imageUrl,
+            timestamp: block.timestamp,
+            postId: nextPostId
+        }));
+        emit PostCreated(msg.sender, userNames[msg.sender], nextPostId, _content, _imageUrl, block.timestamp);
+        nextPostId++;
+    }
 }
