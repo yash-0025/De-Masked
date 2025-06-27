@@ -253,12 +253,9 @@ contract DeMaskedCore is Ownable {
         emit FriendRemoved(msg.sender, _friendAddress);
     }
 
-    
 
 
-
-
-
+// ----------------     HELPER FUNCTIONS ---------------------
     /**
      * @dev Internal helper function to remove an address from an array.
      * @param arr The array to modify.
@@ -274,4 +271,45 @@ contract DeMaskedCore is Ownable {
             }
         }
     }
+
+    /**
+     * @dev Checks if two addresses are friends.
+     * @param _user1 The first user's address.
+     * @param {address} _user2 The second user's address.
+     * @return {bool} True if they are friends, false otherwise.
+     */
+    function areFriends(address _user1, address _user2) public view returns (bool) {
+        return friends[_user1][_user2];
+    }
+
+    /**
+     * @dev Retrieves the list of friends for a given user.
+     * @param _user The user's address.
+     * @return An array of friend addresses.
+     */
+    function getFriendsList(address _user) public view returns (address[] memory) {
+        return userFriendLists[_user];
+    }
+
+   /**
+     * @dev Retrieves the list of pending friend requests sent by a user.
+     * @param _user The user's address.
+     * @return An array of addresses to whom requests were sent.
+     */
+    function getSentRequests(address _user) public view returns (address[] memory) {
+        return userSentRequests[_user];
+    }
+
+   /**
+     * @dev Retrieves the list of pending friend requests received by a user.
+     * @param _user The user's address.
+     * @return An array of addresses from whom requests were received.
+     */
+    function getReceivedRequests(address _user) public view returns (address[] memory) {
+        return userReceivedRequests[_user];
+    }
+
+
+    // ------------------------- POSTS ----------
+    
 }
