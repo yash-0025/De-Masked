@@ -191,4 +191,49 @@ contract DeMaskedCore is Ownable {
 
         emit FriendRequestSent(msg.sender,_receiver);
     }
+
+
+    /**
+     * @dev Accepts a pending friend request.
+     * No direct DMT fee for accepting.
+     * Establishes a mutual friendship and removes the pending request.
+     * @param _requester The address of the user who sent the request.
+     */
+    function acceptFriendRequest(address _requester) public {
+        require(msg.sender != _requester, "You cannot accept your own request");
+        require(isRegistered[msg.sender], "You are not registered to the platform");
+        require(isRegistered[_requester], "Requester is not registered");
+        require(pendingFriendRequests[_requester][msg.sender], "No pending friend request from this user");
+        require(!friends[msg.sender][_requester], "You are already friends");
+
+        friends[msg.sender][_requester] = true;
+        friends[_requester][_requester] = true;
+
+        userFriendLists[msg.sender][_requester] = true;
+        userFriendLists[_requester][msg.sender] = true
+
+        pendingFriendRequests[_requester][msg.sender] = false;
+        _removeAddressFromArray(userSentRequests[_requester], msg.sender);
+        _removeAddressFromArray(userReceivedRequests[msg.sender], _requester);
+
+        emit FriendRequestAccepted(msg.sender, _requester);
+    }
+
+
+
+    /**
+     * @dev Internal helper function to remove an address from an array.
+     * @param arr The array to modify.
+     * @param element The element to remove.
+     */
+
+    function _removeAddressFromArray(address[] storage arr, address element) internal {
+        for(uint i = 0; i <arr.length; i++) {
+            if(arr[i] == element) {
+                arr[i] = arr[arr.length - 1]
+                arr.pop();
+                return;
+            }
+        }
+    }
 }
