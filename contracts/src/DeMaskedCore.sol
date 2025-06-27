@@ -343,4 +343,34 @@ contract DeMaskedCore is Ownable {
         emit PostCreated(msg.sender, userNames[msg.sender], nextPostId, _content, _imageUrl, block.timestamp);
         nextPostId++;
     }
+
+     /**
+     * @dev Retrieves a specific post by its ID.
+     * @param _postId The ID of the post.
+     * @return The Post struct.
+     */
+    function getPost(uint256 _postId) public view returns (Post memory) {
+        require(_postId < posts.length, "Invalid Post ID");
+        return posts[_postId];
+    }
+
+    /**
+     * @dev Retrieves the total number of posts.
+     * @return The total number of posts.
+     */
+    function getPostsCount() public view returns (uint256) {
+        return posts.length;
+    }
+
+    /**
+     * @dev Withdraws collected DMT tokens to the owner's address.
+     * Can only be called by the contract owner.
+     */
+    function withdrawDMT() public onlyOwner {
+        uint256 balance = deMaskedToken.balanceOf(address(this));
+        require(balance > 0, "No DMT tokens to withdraw");
+        require(deMaskedToken.transfer(owner(), balance), "DMT withdrawal failed");
+    }
+
+    
 }
