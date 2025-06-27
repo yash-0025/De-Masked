@@ -219,7 +219,7 @@ contract DeMaskedCore is Ownable {
         emit FriendRequestAccepted(msg.sender, _requester);
     }
 
-    function declinFriendRequest(address _requester) public {
+    function declineFriendRequest(address _requester) public {
         require(msg.sender != requester, "Cannot decline request from yourself");
         require(isRegistered[msg.sender], "User not registered");
         require(isRegistered[_requester], "Friend is not registered");
@@ -233,7 +233,29 @@ contract DeMaskedCore is Ownable {
         emit FriendRequestDeclined(msg.sender, _requester);
     }
 
+ /**
+     * @dev Removes an existing friend.
+     * Breaks the mutual friendship.
+     * @param _friendAddress The address of the friend to remove.
+     */
+    function removeFriend(address _friendAddress) public {
+        require(msg.sender != _friendAddress, "Cannot unfriend yourself");
+        require(isRegistered[msg.sender], "User is not registered");
+        require(isRegistered[_friendAddress], "Friend is not registered");
+        require(friends[msg.sender][_friendAddress],"Not friends with this user");
+
+        friends[msg.sender][_friendAddress] = false;
+        friends[_friendAddress][msg.sender] = false;
+
+        _removeAddressFromArray(userFriendLists[msg.sender],_friendAddress);
+        _removeAddressFromArray(userFriendLists[_friendAddress],msg.sender);
+
+        emit FriendRemoved(msg.sender, _friendAddress);
+    }
+
     
+
+
 
 
 
