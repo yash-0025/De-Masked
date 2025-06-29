@@ -2,12 +2,15 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+
 import {createConfig, WagmiProvider} from 'wagmi';
 import {sepolia} from 'wagmi/chains';
 import {http} from 'viem';
-import { InjectedConnector } from 'wagmi/connectors/injected'
-import {WalletConnectConnector} from 'wagmi/connectors/walletConnect';
-import {CoinbaseWalletConnector} from 'wagmi/connectors/coinbaseWallet';
+
+
+import { injected } from '@wagmi/connectors'
+import {walletConnect} from 'wagmi/connectors';
+import {coinbaseWallet} from 'wagmi/connectors';
 
 
 const projectId = import.meta.env.VITE_PROJECT_ID
@@ -20,18 +23,14 @@ const wagmiConfig = createConfig({
     [sepolia.id]: http(),
   },
   connectors: [
-    new InjectedConnector({chains}),
-    new WalletConnectConnector({
-      chains, options: {
+    injected(),
+    walletConnect({
         projectId,
         showQrModal: true,
-      },
     }),
-    new CoinbaseWalletConnector({
+    coinbaseWallet({
       chains,
-      options: {
         appName: 'DeMasked',
-      },
     }),
   ],
 })
