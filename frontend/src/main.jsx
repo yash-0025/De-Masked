@@ -34,6 +34,9 @@ const wagmiConfig = createConfig({
     }),
   ],
 })
+console.log(wagmiConfig)
+// console.log(chains)
+// console.log(http)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
